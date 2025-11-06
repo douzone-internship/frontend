@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FaSearch } from 'react-icons/fa';
 import Badge from '../common/Badge';
 import AutocompleteInput from '../common/AutocompleteInput';
@@ -9,6 +10,8 @@ import { searchTreatments, searchHospitals, searchLocations } from '../../api/ho
  * 검색 폼 with 자동완성 기능
  */
 const SearchForm = () => {
+  const navigate = useNavigate();
+  
   const [formData, setFormData] = useState({
     treatment: '',
     hospitalName: '',
@@ -59,8 +62,30 @@ const SearchForm = () => {
       return;
     }
     
-    console.log('검색 데이터:', selectedValues);
-    // TODO: 실제 검색 API 호출
+    // 검색 파라미터 구성
+    const params = new URLSearchParams();
+    
+    // 진료명 (객체인 경우 clinicName 사용)
+    if (selectedValues.treatment?.clinicName) {
+      params.append('treatment', selectedValues.treatment.clinicName);
+    } else if (selectedValues.treatment) {
+      params.append('treatment', selectedValues.treatment);
+    }
+    
+    // 병원명 (문자열)
+    if (selectedValues.hospitalName) {
+      params.append('hospital', selectedValues.hospitalName);
+    }
+    
+    // 지역 (객체인 경우 locationName 사용)
+    if (selectedValues.location?.locationName) {
+      params.append('region', selectedValues.location.locationName);
+    } else if (selectedValues.location) {
+      params.append('region', selectedValues.location);
+    }
+    
+    // 결과 페이지로 이동
+    navigate(`/results?${params.toString()}`);
   };
 
   return (
