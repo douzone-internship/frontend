@@ -62,30 +62,21 @@ const SearchForm = () => {
       return;
     }
     
-    // 검색 파라미터 구성
-    const params = new URLSearchParams();
+    // 검색 데이터 구성
+    const searchData = {
+      // API 요청용 코드
+      clinicCode: selectedValues.treatment?.clinicCode,
+      hospitalName: selectedValues.hospitalName || null,
+      sidoCode: selectedValues.location?.sidoCode || null,
+      sigguCode: selectedValues.location?.sgguCode || null,
+      
+      // 화면 표시용 이름
+      clinicName: selectedValues.treatment?.clinicName,
+      locationName: selectedValues.location?.locationName || null
+    };
     
-    // 진료명 (객체인 경우 clinicName 사용)
-    if (selectedValues.treatment?.clinicName) {
-      params.append('treatment', selectedValues.treatment.clinicName);
-    } else if (selectedValues.treatment) {
-      params.append('treatment', selectedValues.treatment);
-    }
-    
-    // 병원명 (문자열)
-    if (selectedValues.hospitalName) {
-      params.append('hospital', selectedValues.hospitalName);
-    }
-    
-    // 지역 (객체인 경우 locationName 사용)
-    if (selectedValues.location?.locationName) {
-      params.append('region', selectedValues.location.locationName);
-    } else if (selectedValues.location) {
-      params.append('region', selectedValues.location);
-    }
-    
-    // 결과 페이지로 이동
-    navigate(`/results?${params.toString()}`);
+    // 결과 페이지로 이동 (state로 데이터 전달)
+    navigate('/results', { state: searchData });
   };
 
   return (
@@ -152,25 +143,8 @@ const SearchForm = () => {
               </div>
             </div>
 
-            {/* 병원명 & 지역 - 2열 그리드 */}
+            {/* 지역 & 병원명 - 2열 그리드 (순서 변경) */}
             <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <AutocompleteInput
-                  id="hospitalName"
-                  name="hospitalName"
-                  label="병원명"
-                  value={formData.hospitalName}
-                  onChange={handleInputChange}
-                  onSelect={handleSelect}
-                  placeholder="병원 이름 (선택사항)"
-                  required={false}
-                  apiFetch={searchHospitals}
-                />
-                <p className="text-xs text-gray-400 text-left pl-1">
-                  특정 병원의 가격을 확인하세요
-                </p>
-              </div>
-              
               <div className="space-y-2">
                 <AutocompleteInput
                   id="location"
@@ -186,6 +160,28 @@ const SearchForm = () => {
                 />
                 <p className="text-xs text-gray-400 text-left pl-1">
                   내 주변 병원 가격을 비교하세요
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <AutocompleteInput
+                  id="hospitalName"
+                  name="hospitalName"
+                  label="병원명"
+                  value={formData.hospitalName}
+                  onChange={handleInputChange}
+                  onSelect={handleSelect}
+                  placeholder={selectedValues.location ? "병원 이름 (선택사항)" : "지역을 먼저 선택하세요"}
+                  required={false}
+                  apiFetch={(name) => {
+                    // 시군구 코드가 있으면 시군구 코드 사용, 없으면 시도 코드 사용
+                    const locationCode = selectedValues.location?.sgguCode || selectedValues.location?.sidoCode;
+                    return searchHospitals(name, locationCode);
+                  }}
+                  disabled={!selectedValues.location}
+                />
+                <p className="text-xs text-gray-400 text-left pl-1">
+                  특정 병원의 가격을 확인하세요
                 </p>
               </div>
             </div>

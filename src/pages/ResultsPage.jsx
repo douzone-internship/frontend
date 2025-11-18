@@ -1,39 +1,54 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { FaMapMarkerAlt, FaStethoscope, FaHospital, FaArrowLeft, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { FaMapMarkerAlt, FaStethoscope, FaHospital, FaArrowLeft, FaChevronLeft, FaChevronRight, FaRobot } from 'react-icons/fa';
 import Skeleton from '../components/common/Skeleton';
 import Logo from '../components/common/Logo';
+import { getSearchResults } from '../api/result';
 
 /**
  * SearchInfo Component
  * 검색 조건 표시
  */
-const SearchInfo = ({ treatment, hospital, region }) => (
+const SearchInfo = ({ clinicName, hospitalName, locationName }) => (
   <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
     <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
       <FaStethoscope className="text-primary" />
       검색 조건
     </h2>
     <div className="flex flex-wrap gap-3">
-      {treatment && (
+      {clinicName && (
         <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg font-medium">
           <FaStethoscope className="text-sm" />
-          <span>{treatment}</span>
+          <span>{clinicName}</span>
         </div>
       )}
-      {hospital && (
+      {hospitalName && (
         <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg font-medium">
           <FaHospital className="text-sm" />
-          <span>{hospital}</span>
+          <span>{hospitalName}</span>
         </div>
       )}
-      {region && (
+      {locationName && (
         <div className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-600 rounded-lg font-medium">
           <FaMapMarkerAlt className="text-sm" />
-          <span>{region}</span>
+          <span>{locationName}</span>
         </div>
       )}
     </div>
+  </div>
+);
+
+/**
+ * AIComment Component
+ * AI 추천 코멘트
+ */
+const AIComment = ({ comment }) => (
+  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm border border-blue-100 p-6 mb-6">
+    <h2 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+      <FaRobot className="text-blue-600" />
+      AI 추천 분석
+    </h2>
+    <p className="text-gray-700 leading-relaxed whitespace-pre-line">{comment}</p>
   </div>
 );
 
@@ -41,33 +56,29 @@ const SearchInfo = ({ treatment, hospital, region }) => (
  * ResultCard Component
  * 개별 검색 결과 카드
  */
-const ResultCard = ({ result }) => (
-  <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-    <div className="flex items-start justify-between mb-4">
-      <div className="flex-1">
-        <h3 className="text-xl font-bold text-gray-900 mb-2">{result.hospitalName}</h3>
-        <p className="text-sm text-gray-600 flex items-center gap-1 mb-2">
-          <FaMapMarkerAlt className="text-gray-400" />
-          {result.location}
-        </p>
-        {result.url && (
-          <a 
-            href={result.url} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-sm text-blue-600 hover:underline flex items-center gap-1"
-          >
-            🔗 {result.url}
-          </a>
-        )}
-      </div>
-      <div className="text-right">
-        <div className="text-2xl font-bold text-primary">{result.price.toLocaleString()}원</div>
-        <div className="text-sm text-gray-500">{result.treatmentName}</div>
+const ResultCard = ({ result }) => {
+  const priceRange = result.minPrice === result.maxPrice 
+    ? `${result.minPrice.toLocaleString()}원`
+    : `${result.minPrice.toLocaleString()}원 ~ ${result.maxPrice.toLocaleString()}원`;
+  
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex-1">
+          <h3 className="text-xl font-bold text-gray-900 mb-2">{result.hospitalName}</h3>
+          <p className="text-sm text-gray-600 flex items-center gap-1 mb-2">
+            <FaMapMarkerAlt className="text-gray-400" />
+            {result.location}
+          </p>
+          <p className="text-sm text-gray-500">{result.clinicName}</p>
+        </div>
+        <div className="text-right">
+          <div className="text-2xl font-bold text-primary">{priceRange}</div>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 /**
  * ResultsLoading Component
@@ -182,8 +193,10 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
  * ResultsContent Component
  * 실제 검색 결과 내용
  */
-const ResultsContent = ({ treatment, hospital, region }) => {
+const ResultsContent = ({ clinicCode, clinicName, hospitalName, locationName, sidoCode, sigguCode }) => {
   const [results, setResults] = useState([]);
+  const [aiComment, setAiComment] = useState('');
+  const [resultCount, setResultCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState('price-low');
@@ -194,217 +207,19 @@ const ResultsContent = ({ treatment, hospital, region }) => {
     const fetchResults = async () => {
       try {
         setLoading(true);
-        // TODO: 실제 API 호출
-        // const response = await axios.get(`${API_BASE_URL}/search`, {
-        //   params: { treatment, hospital, region }
-        // });
-        // setResults(response.data);
         
-        // 임시 더미 데이터 (테스트를 위해 25개 생성)
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const dummyResults = [
-          {
-            id: 1,
-            hospitalName: '서울대학교병원',
-            location: '서울특별시 종로구',
-            treatmentName: treatment || '도수치료',
-            price: 150000,
-            url: 'https://www.snuh.org'
-          },
-          {
-            id: 2,
-            hospitalName: '연세세브란스병원',
-            location: '서울특별시 서대문구',
-            treatmentName: treatment || '도수치료',
-            price: 165000,
-            url: 'https://sev.severance.healthcare'
-          },
-          {
-            id: 3,
-            hospitalName: '삼성서울병원',
-            location: '서울특별시 강남구',
-            treatmentName: treatment || '도수치료',
-            price: 180000,
-            url: 'https://www.samsunghospital.com'
-          },
-          {
-            id: 4,
-            hospitalName: '아산병원',
-            location: '서울특별시 송파구',
-            treatmentName: treatment || '도수치료',
-            price: 175000,
-            url: 'https://www.amc.seoul.kr'
-          },
-          {
-            id: 5,
-            hospitalName: '강남세브란스병원',
-            location: '서울특별시 강남구',
-            treatmentName: treatment || '도수치료',
-            price: 170000,
-            url: 'https://gs.iseverance.com'
-          },
-          {
-            id: 6,
-            hospitalName: '고려대학교안암병원',
-            location: '서울특별시 성북구',
-            treatmentName: treatment || '도수치료',
-            price: 160000,
-            url: 'https://www.kumc.or.kr'
-          },
-          {
-            id: 7,
-            hospitalName: '한양대학교병원',
-            location: '서울특별시 성동구',
-            treatmentName: treatment || '도수치료',
-            price: 155000,
-            url: 'https://www.hyumc.com'
-          },
-          {
-            id: 8,
-            hospitalName: '분당서울대병원',
-            location: '경기도 성남시 분당구',
-            treatmentName: treatment || '도수치료',
-            price: 158000,
-            url: 'https://www.snubh.org'
-          },
-          {
-            id: 9,
-            hospitalName: '일산백병원',
-            location: '경기도 고양시 일산서구',
-            treatmentName: treatment || '도수치료',
-            price: 145000,
-            url: 'https://www.paik.ac.kr/ilsan'
-          },
-          {
-            id: 10,
-            hospitalName: '인천성모병원',
-            location: '인천광역시 부평구',
-            treatmentName: treatment || '도수치료',
-            price: 148000,
-            url: 'https://www.cmcich.or.kr'
-          },
-          {
-            id: 11,
-            hospitalName: '가톨릭대학교 서울성모병원',
-            location: '서울특별시 서초구',
-            treatmentName: treatment || '도수치료',
-            price: 172000,
-            url: 'https://www.cmcseoul.or.kr'
-          },
-          {
-            id: 12,
-            hospitalName: '순천향대학교 서울병원',
-            location: '서울특별시 용산구',
-            treatmentName: treatment || '도수치료',
-            price: 152000,
-            url: 'https://www.schmc.ac.kr/seoul'
-          },
-          {
-            id: 13,
-            hospitalName: '경희대학교병원',
-            location: '서울특별시 동대문구',
-            treatmentName: treatment || '도수치료',
-            price: 157000,
-            url: 'https://www.khmc.or.kr'
-          },
-          {
-            id: 14,
-            hospitalName: '이화여자대학교 목동병원',
-            location: '서울특별시 양천구',
-            treatmentName: treatment || '도수치료',
-            price: 162000,
-            url: 'https://www.eumc.ac.kr/mokdong'
-          },
-          {
-            id: 15,
-            hospitalName: '중앙대학교병원',
-            location: '서울특별시 동작구',
-            treatmentName: treatment || '도수치료',
-            price: 153000,
-            url: 'https://www.caumc.or.kr'
-          },
-          {
-            id: 16,
-            hospitalName: '건국대학교병원',
-            location: '서울특별시 광진구',
-            treatmentName: treatment || '도수치료',
-            price: 151000,
-            url: 'https://www.kuh.ac.kr'
-          },
-          {
-            id: 17,
-            hospitalName: '국민건강보험 일산병원',
-            location: '경기도 고양시 일산동구',
-            treatmentName: treatment || '도수치료',
-            price: 142000,
-            url: 'https://www.nhimc.or.kr'
-          },
-          {
-            id: 18,
-            hospitalName: '명지병원',
-            location: '경기도 고양시 덕양구',
-            treatmentName: treatment || '도수치료',
-            price: 147000,
-            url: 'https://www.mjh.or.kr'
-          },
-          {
-            id: 19,
-            hospitalName: '차병원',
-            location: '경기도 성남시 분당구',
-            treatmentName: treatment || '도수치료',
-            price: 168000,
-            url: 'https://www.chamc.co.kr'
-          },
-          {
-            id: 20,
-            hospitalName: '보훈병원',
-            location: '서울특별시 강동구',
-            treatmentName: treatment || '도수치료',
-            price: 140000,
-            url: 'https://www.bohun.or.kr'
-          },
-          {
-            id: 21,
-            hospitalName: '서울아산병원',
-            location: '서울특별시 송파구',
-            treatmentName: treatment || '도수치료',
-            price: 185000,
-            url: 'https://www.amc.seoul.kr'
-          },
-          {
-            id: 22,
-            hospitalName: '강북삼성병원',
-            location: '서울특별시 종로구',
-            treatmentName: treatment || '도수치료',
-            price: 163000,
-            url: 'https://www.kbsmc.co.kr'
-          },
-          {
-            id: 23,
-            hospitalName: '을지대학교병원',
-            location: '대전광역시 중구',
-            treatmentName: treatment || '도수치료',
-            price: 138000,
-            url: 'https://www.eujimed.or.kr'
-          },
-          {
-            id: 24,
-            hospitalName: '원광대학교병원',
-            location: '전라북도 익산시',
-            treatmentName: treatment || '도수치료',
-            price: 135000,
-            url: 'https://www.wkuh.org'
-          },
-          {
-            id: 25,
-            hospitalName: '동아대학교병원',
-            location: '부산광역시 서구',
-            treatmentName: treatment || '도수치료',
-            price: 141000,
-            url: 'https://www.daumc.or.kr'
-          }
-        ];
-        setResults(dummyResults);
+        // 실제 API 호출
+        const data = await getSearchResults({
+          clinicCode,
+          hospitalName: hospitalName || null,
+          sidoCode: sidoCode || null,
+          sigguCode: sigguCode || null
+        });
+        
+        setResults(data.list || []);
+        setAiComment(data.aiComment || '');
+        setResultCount(data.resultCount || 0);
+    
       } catch (err) {
         setError('검색 결과를 불러오는데 실패했습니다.');
         console.error('검색 실패:', err);
@@ -414,15 +229,15 @@ const ResultsContent = ({ treatment, hospital, region }) => {
     };
 
     fetchResults();
-  }, [treatment, hospital, region]);
+  }, [clinicCode, hospitalName, sidoCode, sigguCode]);
 
   // 정렬된 결과 계산
   const sortedResults = useMemo(() => {
     const sorted = [...results].sort((a, b) => {
       if (sortBy === 'price-low') {
-        return a.price - b.price;
+        return a.minPrice - b.minPrice;
       } else if (sortBy === 'price-high') {
-        return b.price - a.price;
+        return b.maxPrice - a.maxPrice;
       }
       return 0;
     });
@@ -476,11 +291,13 @@ const ResultsContent = ({ treatment, hospital, region }) => {
 
   return (
     <div>
-      <SearchInfo treatment={treatment} hospital={hospital} region={region} />
+      <SearchInfo clinicName={clinicName} hospitalName={hospitalName} locationName={locationName} />
+      
+      {aiComment && <AIComment comment={aiComment} />}
       
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900">
-          검색 결과 <span className="text-primary">{results.length}</span>건
+          검색 결과 <span className="text-primary">{resultCount}</span>건
         </h2>
         <select 
           value={sortBy}
@@ -512,12 +329,30 @@ const ResultsContent = ({ treatment, hospital, region }) => {
  * 검색 결과 페이지
  */
 const ResultsPage = () => {
-  const [searchParams] = useSearchParams();
+  const location = useLocation();
   const navigate = useNavigate();
 
-  const treatment = searchParams.get('treatment') || undefined;
-  const hospital = searchParams.get('hospital') || undefined;
-  const region = searchParams.get('region') || undefined;
+  // state에서 검색 데이터 가져오기
+  const searchData = location.state || {};
+  const {
+    clinicCode,
+    clinicName,
+    hospitalName,
+    locationName,
+    sidoCode,
+    sigguCode
+  } = searchData;
+
+  // state가 없으면 홈으로 리다이렉트
+  useEffect(() => {
+    if (!clinicCode) {
+      navigate('/');
+    }
+  }, [clinicCode, navigate]);
+
+  if (!clinicCode) {
+    return null;
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
@@ -539,7 +374,14 @@ const ResultsPage = () => {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <ResultsContent treatment={treatment} hospital={hospital} region={region} />
+        <ResultsContent 
+          clinicCode={clinicCode} 
+          clinicName={clinicName}
+          hospitalName={hospitalName} 
+          locationName={locationName}
+          sidoCode={sidoCode} 
+          sigguCode={sigguCode} 
+        />
       </div>
     </main>
   );

@@ -14,15 +14,22 @@ const AutocompleteInput = ({
   placeholder, 
   required, 
   apiFetch,
-  displayKey = null 
+  displayKey = null,
+  disabled = false
 }) => {
   const [suggestions, setSuggestions] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [inputValue, setInputValue] = useState('');
+  const [isSelected, setIsSelected] = useState(false); // 선택 상태 추가
 
   // 디바운싱을 위한 타이머
   useEffect(() => {
+    // 이미 선택된 항목이면 API 호출 안함
+    if (isSelected) {
+      return;
+    }
+
     // API 호출
     const fetchSuggestions = async (searchTerm) => {
       setLoading(true);
@@ -48,11 +55,12 @@ const AutocompleteInput = ({
     }, 1000); // 1초 대기
 
     return () => clearTimeout(timer);
-  }, [inputValue, apiFetch]);
+  }, [inputValue, apiFetch, isSelected]);
 
   const handleInputChange = (e) => {
     const newValue = e.target.value;
     setInputValue(newValue);
+    setIsSelected(false); // 입력 시작하면 선택 상태 해제
     onChange(e); // 부모 컴포넌트에 알림
   };
 
@@ -60,6 +68,7 @@ const AutocompleteInput = ({
     // 객체인 경우 displayKey로 표시, 문자열이면 그대로 사용
     const displayValue = displayKey ? suggestion[displayKey] : suggestion;
     setInputValue(displayValue);
+    setIsSelected(true); // 선택 완료 표시
     onSelect(name, suggestion);  // 전체 객체 또는 문자열 전달
     setIsOpen(false);
     setSuggestions([]);
@@ -83,12 +92,15 @@ const AutocompleteInput = ({
           name={name}
           value={inputValue}
           onChange={handleInputChange}
-          onFocus={() => inputValue && suggestions.length > 0 && setIsOpen(true)}
+          onFocus={() => !disabled && inputValue && suggestions.length > 0 && setIsOpen(true)}
           onBlur={handleBlur}
           placeholder={placeholder}
           required={required}
+          disabled={disabled}
           autoComplete="off"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+          className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none ${
+            disabled ? 'bg-gray-100 cursor-not-allowed text-gray-500' : ''
+          }`}
         />
         {loading && <div className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-500">검색 중...</div>}
         {isOpen && suggestions.length > 0 && (

@@ -15,8 +15,7 @@ export const searchTreatments = async (name) => {
         name: name
       }
     });
-    // 응답 형식: [{ clinicName: "도수치료", clinicCode: "CZ100A" }, ...]
-    return response.data;
+    return response.data.clinicResponseDTOList || [];
   } catch (error) {
     console.error('진료명 검색 실패:', error);
     throw error;
@@ -26,16 +25,17 @@ export const searchTreatments = async (name) => {
 /**
  * 병원명 검색 API
  * @param {string} name - 검색어
+ * @param {string} locationCode - 지역 코드 (sgguCode 또는 sidoCode)
  * @returns {Promise<string[]>} 병원명 목록
  */
-export const searchHospitals = async (name) => {
+export const searchHospitals = async (name, locationCode) => {
   try {
     const response = await axios.get(`${API_BASE_URL}/home/hospitals`, {
       params: {
+        location: locationCode,
         name: name
       }
     });
-    // 응답 형식: { nameList: ["서울대병원", "분당서울대학교병원", ...] }
     return response.data.nameList || [];
   } catch (error) {
     console.error('병원명 검색 실패:', error);
@@ -46,7 +46,7 @@ export const searchHospitals = async (name) => {
 /**
  * 지역(시군구) 검색 API
  * @param {string} name - 검색어
- * @returns {Promise<Array<{locationName: string, locationCode: string}>>} 지역 목록 (객체 배열)
+ * @returns {Promise<Array<{locationName: string, sidoCode: string, sgguCode: string}>>} 지역 목록 (객체 배열)
  */
 export const searchLocations = async (name) => {
   try {
@@ -55,8 +55,7 @@ export const searchLocations = async (name) => {
         name: name
       }
     });
-    // 응답 형식: [{ locationName: "강원도 춘천시", locationCode: "1103011103" }, ...]
-    return response.data;
+    return response.data.locations || [];
   } catch (error) {
     console.error('지역 검색 실패:', error);
     throw error;
