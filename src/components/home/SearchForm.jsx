@@ -56,9 +56,14 @@ const SearchForm = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // 서버에서 선택된 값만 전송
+    // 필수 항목 검증
     if (!selectedValues.treatment) {
       alert('진료명을 선택해주세요.');
+      return;
+    }
+    
+    if (!selectedValues.location) {
+      alert('지역을 선택해주세요.');
       return;
     }
     
@@ -133,16 +138,6 @@ const SearchForm = () => {
               </p>
             </div>
 
-            {/* Divider */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white text-gray-500 font-medium">선택 옵션</span>
-              </div>
-            </div>
-
             {/* 지역 & 병원명 - 2열 그리드 (순서 변경) */}
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
@@ -153,12 +148,13 @@ const SearchForm = () => {
                   value={formData.location}
                   onChange={handleInputChange}
                   onSelect={handleSelect}
-                  placeholder="지역 선택 (선택사항)"
-                  required={false}
+                  placeholder="지역을 선택하세요"
+                  required={true}
                   apiFetch={searchLocations}
                   displayKey="locationName"
                 />
-                <p className="text-xs text-gray-400 text-left pl-1">
+                <p className="text-xs text-gray-500 text-left pl-1 flex items-center gap-1">
+                  <span className="text-primary">*</span>
                   내 주변 병원 가격을 비교하세요
                 </p>
               </div>

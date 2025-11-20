@@ -282,10 +282,10 @@ const ResultsContent = ({ clinicCode, clinicName, hospitalName, locationName, si
       <div className="text-center py-12">
         <p className="text-red-500 mb-4">{error}</p>
         <button 
-          onClick={() => window.location.reload()} 
+          onClick={() => navigate('/')} 
           className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90"
         >
-          다시 시도
+          홈으로 이동
         </button>
       </div>
     );
