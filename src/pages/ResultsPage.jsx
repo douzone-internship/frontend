@@ -194,6 +194,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
  * 실제 검색 결과 내용
  */
 const ResultsContent = ({ clinicCode, clinicName, hospitalName, locationName, sidoCode, sigguCode }) => {
+  const navigate = useNavigate();
   const [results, setResults] = useState([]);
   const [aiComment, setAiComment] = useState('');
   const [resultCount, setResultCount] = useState(0);
@@ -230,6 +231,16 @@ const ResultsContent = ({ clinicCode, clinicName, hospitalName, locationName, si
 
     fetchResults();
   }, [clinicCode, hospitalName, sidoCode, sigguCode]);
+
+  // 검색 결과가 없을 때 홈으로 자동 이동
+  useEffect(() => {
+    if (!loading && results.length === 0 && !error) {
+      const timer = setTimeout(() => {
+        navigate('/');
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, results.length, error, navigate]);
 
   // 정렬된 결과 계산
   const sortedResults = useMemo(() => {
@@ -284,7 +295,13 @@ const ResultsContent = ({ clinicCode, clinicName, hospitalName, locationName, si
     return (
       <div className="text-center py-12">
         <p className="text-gray-500 text-lg mb-2">검색 결과가 없습니다.</p>
-        <p className="text-gray-400 text-sm">다른 검색 조건으로 시도해보세요.</p>
+        <p className="text-gray-400 text-sm mb-4">잠시 후 홈으로 이동합니다...</p>
+        <button 
+          onClick={() => navigate('/')} 
+          className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90"
+        >
+          홈으로 이동
+        </button>
       </div>
     );
   }

@@ -9,7 +9,7 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL ?? '';
  * @param {string} requestBody.clinicCode - 진료 코드
  * @param {string} requestBody.hospitalName - 병원명 
  * @param {string} requestBody.sidoCode - 시도 코드 
- * @param {string} requestBody.sigguCode - 시군구 코드 
+ * @param {string} requestBody.sigguCode - 시군구 코드
  * @returns {Promise<{resultCount: number, aiComment: string, list: Array}>} 검색 결과
  */
 export const getSearchResults = async (requestBody) => {
