@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { FaMapMarkerAlt, FaStethoscope, FaHospital, FaArrowLeft, FaChevronLeft, FaChevronRight, FaRobot } from 'react-icons/fa';
 import Skeleton from '../components/common/Skeleton';
 import Logo from '../components/common/Logo';
-import { getSearchResults } from '../api/result';
+import { getSearchResults, getSearchResultsFromSession } from '../api/result';
 
 /**
  * SearchInfo Component
@@ -82,16 +82,19 @@ const ResultCard = ({ result }) => {
 
 /**
  * ResultsLoading Component
- * 로딩 스켈레톤
+ * 로딩 스피너
  */
 const ResultsLoading = () => (
-  <div className="space-y-6">
-    <Skeleton className="h-12 w-64" />
-    <Skeleton className="h-32 w-full" />
-    <div className="space-y-4">
-      {[...Array(5)].map((_, i) => (
-        <Skeleton key={i} className="h-32 w-full" />
-      ))}
+  <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
+    <div className="relative">
+      {/* 외곽 원 */}
+      <div className="w-20 h-20 border-4 border-gray-200 rounded-full"></div>
+      {/* 회전하는 원 */}
+      <div className="absolute top-0 left-0 w-20 h-20 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+    </div>
+    <div className="text-center space-y-2">
+      <p className="text-lg font-semibold text-gray-900">검색 중입니다</p>
+      <p className="text-sm text-gray-500">최적의 병원 정보를 찾고 있어요</p>
     </div>
   </div>
 );
@@ -208,14 +211,20 @@ const ResultsContent = ({ clinicCode, clinicName, hospitalName, locationName, si
     const fetchResults = async () => {
       try {
         setLoading(true);
+        let data;
         
-        // 실제 API 호출
-        const data = await getSearchResults({
-          clinicCode,
-          hospitalName: hospitalName || null,
-          sidoCode: sidoCode || null,
-          sigguCode: sigguCode || null
-        });
+        // clinicCode가 있으면 POST 요청, 없으면 세션 기반 GET 요청
+        if (clinicCode) {
+          data = await getSearchResults({
+            clinicCode,
+            hospitalName: hospitalName || null,
+            sidoCode: sidoCode || null,
+            sigguCode: sigguCode || null
+          });
+        } else {
+          // 새로고침 시 세션에서 가져오기
+          data = await getSearchResultsFromSession();
+        }
         
         setResults(data.list || []);
         setAiComment(data.aiComment || '');
@@ -224,13 +233,15 @@ const ResultsContent = ({ clinicCode, clinicName, hospitalName, locationName, si
       } catch (err) {
         setError('검색 결과를 불러오는데 실패했습니다.');
         console.error('검색 실패:', err);
+        // 세션이 없거나 오류 시 홈으로 리다이렉트
+        setTimeout(() => navigate('/'), 2000);
       } finally {
         setLoading(false);
       }
     };
 
     fetchResults();
-  }, [clinicCode, hospitalName, sidoCode, sigguCode]);
+  }, [clinicCode, hospitalName, sidoCode, sigguCode, navigate]);
 
   // 검색 결과가 없을 때 홈으로 자동 이동
   useEffect(() => {
@@ -360,16 +371,8 @@ const ResultsPage = () => {
     sigguCode
   } = searchData;
 
-  // state가 없으면 홈으로 리다이렉트
-  useEffect(() => {
-    if (!clinicCode) {
-      navigate('/');
-    }
-  }, [clinicCode, navigate]);
-
-  if (!clinicCode) {
-    return null;
-  }
+  // state가 없어도 (새로고침 시) 세션으로 조회하므로 리다이렉트하지 않음
+  // 리다이렉트는 API 에러 시 ResultsContent에서 처리
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">

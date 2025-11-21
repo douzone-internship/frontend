@@ -21,3 +21,17 @@ export const getSearchResults = async (requestBody) => {
     throw error;
   }
 };
+
+/**
+ * 검색 결과 조회 API (GET - 세션 기반)
+ * @returns {Promise<{resultCount: number, aiComment: string, list: Array}>} 검색 결과
+ */
+export const getSearchResultsFromSession = async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/result/reports`);
+    return response.data;
+  } catch (error) {
+    console.error('세션 기반 검색 결과 조회 실패:', error);
+    throw error;
+  }
+};
