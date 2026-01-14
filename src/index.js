@@ -4,6 +4,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './index.css';
 import HomePage from './home/Home.jsx';
 import ResultsPage from './pages/ResultsPage.jsx';
+import LoginPage from './pages/LoginPage.jsx';
+import OAuthCallback from './auth/OAuthCallback.jsx';
 import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
@@ -13,6 +15,8 @@ root.render(
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/results" element={<ResultsPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/oauth/callback" element={<OAuthCallback />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>
