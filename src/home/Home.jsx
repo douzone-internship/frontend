@@ -8,11 +8,32 @@ const HomePage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      setUser({ isLoggedIn: true });
-    }
-    setLoading(false);
+    const fetchUser = async () => {
+      try {
+        const response = await fetch('/api/auth/me', {
+          credentials: 'include',
+          cache: 'no-store' // 캐시 방지
+        });
+        
+        if (!response.ok) {
+          setUser(null);
+          return;
+        }
+        
+        const data = await response.json();
+        if (data.authenticated && data.name) {
+          setUser({ name: data.name, email: data.email });
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('사용자 정보 조회 실패:', error);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUser();
   }, []);
 
   return (

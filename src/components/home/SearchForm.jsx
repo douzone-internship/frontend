@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaSearch } from 'react-icons/fa';
+import { FaSearch, FaInfoCircle, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import Badge from '../common/Badge';
 import AutocompleteInput from '../common/AutocompleteInput';
 import { searchTreatments, searchHospitals, searchLocations } from '../../api/home';
@@ -12,6 +12,8 @@ import { searchTreatments, searchHospitals, searchLocations } from '../../api/ho
 const SearchForm = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
+  const infoRef = useRef(null);
   
   const [formData, setFormData] = useState({
     treatment: '',
@@ -86,6 +88,15 @@ const SearchForm = () => {
     
     // 결과 페이지로 이동 (state로 데이터 전달)
     navigate('/results', { state: searchData });
+  };
+
+  const toggleInfo = () => {
+    setShowInfo(!showInfo);
+    if (!showInfo) {
+      setTimeout(() => {
+        infoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 100);
+    }
   };
 
   return (
@@ -224,6 +235,121 @@ const SearchForm = () => {
         <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
           <span className="text-blue-500 font-bold">✓</span>
           <span className="text-gray-700 font-medium">신뢰할 수 있는 데이터</span>
+        </div>
+      </div>
+
+      {/* 비급여 진료 정보 섹션 (하단 확장형) */}
+      <div ref={infoRef} className="max-w-4xl mx-auto">
+        <button
+          onClick={toggleInfo}
+          className="w-full bg-white rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-gradient-to-r from-primary to-blue-500 p-3 rounded-full">
+                <FaInfoCircle className="text-white text-xl" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-xl font-bold text-gray-900">비급여 진료란 무엇인가요?</h3>
+                <p className="text-sm text-gray-600 mt-1">건강보험이 적용되지 않는 진료에 대해 알아보세요</p>
+              </div>
+            </div>
+            <div className="text-primary text-2xl">
+              {showInfo ? <FaChevronUp /> : <FaChevronDown />}
+            </div>
+          </div>
+        </button>
+
+        {/* 확장 가능한 정보 컨텐츠 */}
+        <div 
+          className={`overflow-hidden transition-all duration-500 ease-in-out ${
+            showInfo ? 'max-h-[2000px] opacity-100 mt-4' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 space-y-6">
+            {/* 정의 */}
+            <div className="space-y-3">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <span className="text-2xl">📋</span>
+                정의
+              </h3>
+              <p className="text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-lg">
+                비급여 진료는 <strong className="text-primary">건강보험이 적용되지 않는 의료 서비스</strong>로, 
+                환자가 치료 비용을 <strong>전액 본인이 부담</strong>해야 하는 진료 항목입니다.
+              </p>
+            </div>
+
+            {/* 주요 특징 */}
+            <div className="space-y-3">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <span className="text-2xl">✨</span>
+                주요 특징
+              </h3>
+              <ul className="space-y-3">
+                <li className="flex items-start gap-3 bg-blue-50 p-4 rounded-lg">
+                  <span className="text-primary font-bold mt-1">•</span>
+                  <div>
+                    <strong className="text-gray-900">병원마다 가격이 다릅니다</strong>
+                    <p className="text-gray-600 text-sm mt-1">각 의료기관이 자율적으로 가격을 책정하므로 병원별 비용 차이가 큽니다.</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3 bg-blue-50 p-4 rounded-lg">
+                  <span className="text-secondary font-bold mt-1">•</span>
+                  <div>
+                    <strong className="text-gray-900">본인 부담 100%</strong>
+                    <p className="text-gray-600 text-sm mt-1">건강보험 혜택을 받을 수 없어 전액을 환자가 부담합니다.</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3 bg-blue-50 p-4 rounded-lg">
+                  <span className="text-blue-500 font-bold mt-1">•</span>
+                  <div>
+                    <strong className="text-gray-900">가격 비교 필수</strong>
+                    <p className="text-gray-600 text-sm mt-1">동일한 진료라도 병원에 따라 비용이 크게 차이날 수 있습니다.</p>
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            {/* 대표적인 비급여 진료 항목 */}
+            <div className="space-y-3">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <span className="text-2xl">🏥</span>
+                대표적인 비급여 진료 항목
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-gradient-to-br from-primary/10 to-blue-50 p-4 rounded-lg">
+                  <p className="font-semibold text-gray-900">MRI, CT 등</p>
+                  <p className="text-sm text-gray-600 mt-1">고가 검사</p>
+                </div>
+                <div className="bg-gradient-to-br from-secondary/10 to-purple-50 p-4 rounded-lg">
+                  <p className="font-semibold text-gray-900">도수치료</p>
+                  <p className="text-sm text-gray-600 mt-1">물리치료</p>
+                </div>
+                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-4 rounded-lg">
+                  <p className="font-semibold text-gray-900">임플란트</p>
+                  <p className="text-sm text-gray-600 mt-1">치과 진료</p>
+                </div>
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-lg">
+                  <p className="font-semibold text-gray-900">미용/성형</p>
+                  <p className="text-sm text-gray-600 mt-1">선택 진료</p>
+                </div>
+              </div>
+            </div>
+
+            {/* 왜 비교가 중요한가? */}
+            <div className="space-y-3">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <span className="text-2xl">💡</span>
+                왜 가격 비교가 중요한가요?
+              </h3>
+              <div className="bg-gradient-to-br from-yellow-50 to-orange-50 p-5 rounded-lg border-2 border-yellow-200">
+                <p className="text-gray-800 leading-relaxed">
+                  같은 MRI 검사도 병원마다 <strong className="text-red-600">10만원~50만원</strong>까지 차이가 날 수 있습니다. 
+                  현명한 비교를 통해 <strong className="text-primary">합리적인 의료비</strong>를 지출하실 수 있습니다.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

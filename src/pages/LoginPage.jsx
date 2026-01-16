@@ -1,9 +1,23 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { FcGoogle } from 'react-icons/fc';
+import { RiKakaoTalkFill } from 'react-icons/ri';
+import { useLocation } from 'react-router-dom';
 
 const LoginPage = () => {
+    const location = useLocation();
+
+    useEffect(() => {
+        // 로그인 페이지로 올 때 이전 페이지 경로를 세션 스토리지에 저장
+        const from = location.state?.from || '/';
+        sessionStorage.setItem('oauth_redirect_path', from);
+    }, [location]);
+
     const handleGoogleLogin = () => {
         window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+    };
+
+    const handleKakaoLogin = () => {
+        window.location.href = 'http://localhost:8080/oauth2/authorization/kakao';
     };
 
     return (
@@ -26,6 +40,14 @@ const LoginPage = () => {
                     >
                         <FcGoogle className="text-2xl group-hover:scale-110 transition-transform" />
                         <span className="text-gray-700 font-medium text-lg">Google 계정으로 로그인</span>
+                    </button>
+
+                    <button
+                        onClick={handleKakaoLogin}
+                        className="flex items-center justify-center gap-3 w-full py-4 px-6 rounded-xl shadow-sm bg-[#FEE500] hover:bg-[#FDD835] transition-all duration-200 group border border-[#FEE500]"
+                    >
+                        <RiKakaoTalkFill className="text-2xl text-[#3C1E1E] group-hover:scale-110 transition-transform" />
+                        <span className="text-[#3C1E1E] font-medium text-lg">카카오 계정으로 로그인</span>
                     </button>
                 </div>
 
