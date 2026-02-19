@@ -14,7 +14,7 @@ const SearchForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const infoRef = useRef(null);
-  
+
   const [formData, setFormData] = useState({
     treatment: '',
     hospitalName: '',
@@ -41,7 +41,7 @@ const SearchForm = () => {
       ...prev,
       [name]: value
     }));
-    
+
     // formData는 display용이므로 객체인 경우 display 속성만 저장
     let displayValue = value;
     if (name === 'treatment' && value?.clinicName) {
@@ -49,7 +49,7 @@ const SearchForm = () => {
     } else if (name === 'location' && value?.locationName) {
       displayValue = value.locationName;
     }
-    
+
     setFormData(prev => ({
       ...prev,
       [name]: displayValue
@@ -58,21 +58,21 @@ const SearchForm = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     // 필수 항목 검증
     if (!selectedValues.treatment) {
       alert('진료명을 선택해주세요.');
       return;
     }
-    
+
     if (!selectedValues.location) {
       alert('지역을 선택해주세요.');
       return;
     }
-    
+
     // 로딩 시작
     setIsLoading(true);
-    
+
     // 검색 데이터 구성
     const searchData = {
       // API 요청용 코드
@@ -80,12 +80,12 @@ const SearchForm = () => {
       hospitalName: selectedValues.hospitalName || null,
       sidoCode: selectedValues.location?.sidoCode || null,
       sigguCode: selectedValues.location?.sgguCode || null,
-      
+
       // 화면 표시용 이름
       clinicName: selectedValues.treatment?.clinicName,
       locationName: selectedValues.location?.locationName || null
     };
-    
+
     // 결과 페이지로 이동 (state로 데이터 전달)
     navigate('/results', { state: searchData });
   };
@@ -105,7 +105,7 @@ const SearchForm = () => {
       <div className="flex justify-center animate-fade-in">
         <Badge>AI 기반 가격 분석</Badge>
       </div>
-      
+
       {/* Title Section */}
       <div className="space-y-4">
         <h1 className="text-4xl md:text-6xl font-bold text-gray-900 leading-tight">
@@ -115,7 +115,7 @@ const SearchForm = () => {
             투명하게 비교하세요
           </span>
         </h1>
-        
+
         <p className="text-lg md:text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto">
           병원별 비급여 진료 항목의 가격을 한눈에 비교하고
           <br className="hidden md:block" />
@@ -127,7 +127,7 @@ const SearchForm = () => {
       <div className="relative max-w-4xl mx-auto">
         {/* Background Glow */}
         <div className="absolute -inset-1 bg-gradient-to-r from-primary via-blue-500 to-secondary rounded-3xl blur-2xl opacity-20 group-hover:opacity-30 transition duration-1000" />
-        
+
         {/* Main Card */}
         <div className="relative bg-white rounded-2xl shadow-2xl p-8 md:p-10 border border-gray-100">
           <form onSubmit={handleSubmit} className="space-y-8">
@@ -173,7 +173,7 @@ const SearchForm = () => {
                   내 주변 병원 가격을 비교하세요
                 </p>
               </div>
-              
+
               <div className="space-y-2">
                 <AutocompleteInput
                   id="hospitalName"
@@ -198,8 +198,8 @@ const SearchForm = () => {
             </div>
 
             {/* Submit Button with Gradient */}
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={isLoading}
               className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-primary via-blue-500 to-secondary text-white py-4 md:py-5 rounded-xl font-bold text-base md:text-lg hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-lg disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
@@ -261,12 +261,11 @@ const SearchForm = () => {
         </button>
 
         {/* 확장 가능한 정보 컨텐츠 */}
-        <div 
-          className={`overflow-hidden transition-all duration-500 ease-in-out ${
-            showInfo ? 'max-h-[2000px] opacity-100 mt-4' : 'max-h-0 opacity-0'
-          }`}
+        <div
+          className={`overflow-hidden transition-all duration-500 ease-in-out ${showInfo ? 'max-h-[2000px] opacity-100 mt-4' : 'max-h-0 opacity-0'
+            }`}
         >
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 space-y-6">
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 space-y-6 text-left">
             {/* 정의 */}
             <div className="space-y-3">
               <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
@@ -274,7 +273,7 @@ const SearchForm = () => {
                 정의
               </h3>
               <p className="text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-lg">
-                비급여 진료는 <strong className="text-primary">건강보험이 적용되지 않는 의료 서비스</strong>로, 
+                비급여 진료는 <strong className="text-primary">건강보험이 적용되지 않는 의료 서비스</strong>로,
                 환자가 치료 비용을 <strong>전액 본인이 부담</strong>해야 하는 진료 항목입니다.
               </p>
             </div>
@@ -316,7 +315,7 @@ const SearchForm = () => {
                 <span className="text-2xl">🏥</span>
                 대표적인 비급여 진료 항목
               </h3>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3 text-center">
                 <div className="bg-gradient-to-br from-primary/10 to-blue-50 p-4 rounded-lg">
                   <p className="font-semibold text-gray-900">MRI, CT 등</p>
                   <p className="text-sm text-gray-600 mt-1">고가 검사</p>
@@ -344,7 +343,7 @@ const SearchForm = () => {
               </h3>
               <div className="bg-gradient-to-br from-yellow-50 to-orange-50 p-5 rounded-lg border-2 border-yellow-200">
                 <p className="text-gray-800 leading-relaxed">
-                  같은 MRI 검사도 병원마다 <strong className="text-red-600">10만원~50만원</strong>까지 차이가 날 수 있습니다. 
+                  같은 MRI 검사도 병원마다 <strong className="text-red-600">10만원~50만원</strong>까지 차이가 날 수 있습니다.
                   현명한 비교를 통해 <strong className="text-primary">합리적인 의료비</strong>를 지출하실 수 있습니다.
                 </p>
               </div>

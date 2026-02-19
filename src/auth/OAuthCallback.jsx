@@ -5,12 +5,20 @@ const OAuthCallback = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
+        // URL에서 토큰 추출
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('token');
+
+        if (token) {
+            localStorage.setItem('token', token);
+        }
+
         // 세션 스토리지에서 저장된 리다이렉트 경로 가져오기
         const redirectPath = sessionStorage.getItem('oauth_redirect_path') || '/';
-        
+
         // 세션 스토리지 정리
         sessionStorage.removeItem('oauth_redirect_path');
-        
+
         // 저장된 경로로 이동
         navigate(redirectPath, { replace: true });
     }, [navigate]);

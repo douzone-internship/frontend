@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { FaMapMarkerAlt, FaStethoscope, FaHospital, FaArrowLeft, FaChevronLeft, FaChevronRight, FaRobot } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaStethoscope, FaHospital, FaArrowLeft, FaChevronLeft, FaChevronRight, FaRobot, FaHeart, FaRegHeart } from 'react-icons/fa';
 import Skeleton from '../components/common/Skeleton';
 import Logo from '../components/common/Logo';
 import { getSearchResults, getSearchResultsFromSession } from '../api/result';
+import { addFavorite, removeFavoriteByDetails, checkFavorite } from '../api/favorite';
 
 /**
  * SearchInfo Component
@@ -56,16 +57,92 @@ const AIComment = ({ comment }) => (
  * ResultCard Component
  * 개별 검색 결과 카드
  */
-const ResultCard = ({ result }) => {
-  const priceRange = result.minPrice === result.maxPrice 
+
+
+const ResultCard = ({ result, defaultClinicCode }) => {
+  const [isFavorite, setIsFavorite] = useState(false);
+  const targetClinicCode = result.clinicCode || defaultClinicCode;
+
+  // 초기 찜 상태 확인
+  useEffect(() => {
+    const checkStatus = async () => {
+      // 로그인이 안되어 있으면 API 호출 안함 (토큰 체크)
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      console.log(`Checking favorite for ${result.hospitalName}, code: ${targetClinicCode}`);
+      try {
+        const favorited = await checkFavorite(result.hospitalName, targetClinicCode);
+        console.log(`Favorite status for ${result.hospitalName}: ${favorited}`);
+        setIsFavorite(favorited);
+      } catch (error) {
+        console.error("Failed to check favorite status", error);
+      }
+    };
+    if (result.hospitalName && targetClinicCode) {
+      checkStatus();
+    }
+  }, [result.hospitalName, targetClinicCode]);
+
+  const priceRange = result.minPrice === result.maxPrice
     ? `${result.minPrice.toLocaleString()}원`
     : `${result.minPrice.toLocaleString()}원 ~ ${result.maxPrice.toLocaleString()}원`;
-  
+
+  const toggleFavorite = async (e) => {
+    e.stopPropagation(); // 카드 클릭 이벤트 전파 방지
+
+    // 로그인 체크
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert("로그인이 필요한 기능입니다.");
+      return;
+    }
+
+    // 낙관적 업데이트
+    const prevStatus = isFavorite;
+    setIsFavorite(!prevStatus);
+
+    try {
+      if (!prevStatus) {
+        // 찜하기 추가
+        await addFavorite({
+          hospitalName: result.hospitalName,
+          clinicName: result.clinicName,
+          clinicCode: targetClinicCode, // result에 clinicCode가 없으면 default 사용
+          location: result.location,
+          minPrice: result.minPrice,
+          maxPrice: result.maxPrice
+        });
+      } else {
+        // 찜하기 삭제
+        await removeFavoriteByDetails(result.hospitalName, targetClinicCode);
+      }
+    } catch (error) {
+      console.error("찜하기 변경 실패", error);
+      // 실패 시 롤백
+      setIsFavorite(prevStatus);
+      alert("요청 처리에 실패했습니다.");
+    }
+  };
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow relative group">
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
-          <h3 className="text-xl font-bold text-gray-900 mb-2">{result.hospitalName}</h3>
+          <div className="flex items-center gap-2 mb-2">
+            <h3 className="text-xl font-bold text-gray-900">{result.hospitalName}</h3>
+            <button
+              onClick={toggleFavorite}
+              className="p-1 rounded-full hover:bg-red-50 transition-colors"
+              aria-label={isFavorite ? "찜하기 취소" : "찜하기"}
+            >
+              {isFavorite ? (
+                <FaHeart className="text-red-500 text-lg animate-scale-in" />
+              ) : (
+                <FaRegHeart className="text-gray-300 text-lg hover:text-red-400 transition-colors" />
+              )}
+            </button>
+          </div>
           <p className="text-sm text-gray-600 flex items-center gap-1 mb-2">
             <FaMapMarkerAlt className="text-gray-400" />
             {result.location}
@@ -107,7 +184,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   const getPageNumbers = () => {
     const pages = [];
     const maxPagesToShow = 5;
-    
+
     if (totalPages <= maxPagesToShow) {
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
@@ -135,7 +212,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
         pages.push(totalPages);
       }
     }
-    
+
     return pages;
   };
 
@@ -146,11 +223,10 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        className={`p-2 rounded-lg border ${
-          currentPage === 1
-            ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-        }`}
+        className={`p-2 rounded-lg border ${currentPage === 1
+          ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+          }`}
         aria-label="이전 페이지"
       >
         <FaChevronLeft />
@@ -165,11 +241,10 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
           <button
             key={page}
             onClick={() => onPageChange(page)}
-            className={`min-w-[40px] px-3 py-2 rounded-lg border font-medium transition-colors ${
-              currentPage === page
-                ? 'bg-primary text-white border-primary'
-                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-            }`}
+            className={`min-w-[40px] px-3 py-2 rounded-lg border font-medium transition-colors ${currentPage === page
+              ? 'bg-primary text-white border-primary'
+              : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+              }`}
           >
             {page}
           </button>
@@ -179,16 +254,15 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className={`p-2 rounded-lg border ${
-          currentPage === totalPages
-            ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-        }`}
+        className={`p-2 rounded-lg border ${currentPage === totalPages
+          ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+          }`}
         aria-label="다음 페이지"
       >
         <FaChevronRight />
       </button>
-    </div>
+    </div >
   );
 };
 
@@ -212,7 +286,7 @@ const ResultsContent = ({ clinicCode, clinicName, hospitalName, locationName, si
       try {
         setLoading(true);
         let data;
-        
+
         // clinicCode가 있으면 POST 요청, 없으면 세션 기반 GET 요청
         if (clinicCode) {
           data = await getSearchResults({
@@ -225,11 +299,11 @@ const ResultsContent = ({ clinicCode, clinicName, hospitalName, locationName, si
           // 새로고침 시 세션에서 가져오기
           data = await getSearchResultsFromSession();
         }
-        
+
         setResults(data.list || []);
         setAiComment(data.aiComment || '');
         setResultCount(data.resultCount || 0);
-    
+
       } catch (err) {
         setError('검색 결과를 불러오는데 실패했습니다.');
         console.error('검색 실패:', err);
@@ -292,8 +366,8 @@ const ResultsContent = ({ clinicCode, clinicName, hospitalName, locationName, si
     return (
       <div className="text-center py-12">
         <p className="text-red-500 mb-4">{error}</p>
-        <button 
-          onClick={() => navigate('/')} 
+        <button
+          onClick={() => navigate('/')}
           className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90"
         >
           홈으로 이동
@@ -307,8 +381,8 @@ const ResultsContent = ({ clinicCode, clinicName, hospitalName, locationName, si
       <div className="text-center py-12">
         <p className="text-gray-500 text-lg mb-2">검색 결과가 없습니다.</p>
         <p className="text-gray-400 text-sm mb-4">잠시 후 홈으로 이동합니다...</p>
-        <button 
-          onClick={() => navigate('/')} 
+        <button
+          onClick={() => navigate('/')}
           className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90"
         >
           홈으로 이동
@@ -320,14 +394,14 @@ const ResultsContent = ({ clinicCode, clinicName, hospitalName, locationName, si
   return (
     <div>
       <SearchInfo clinicName={clinicName} hospitalName={hospitalName} locationName={locationName} />
-      
+
       {aiComment && <AIComment comment={aiComment} />}
-      
+
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900">
           검색 결과 <span className="text-primary">{resultCount}</span>건
         </h2>
-        <select 
+        <select
           value={sortBy}
           onChange={handleSortChange}
           className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -339,11 +413,11 @@ const ResultsContent = ({ clinicCode, clinicName, hospitalName, locationName, si
 
       <div className="space-y-4">
         {currentResults.map((result) => (
-          <ResultCard key={result.id} result={result} />
+          <ResultCard key={result.id} result={result} defaultClinicCode={clinicCode} />
         ))}
       </div>
 
-      <Pagination 
+      <Pagination
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={handlePageChange}
@@ -360,8 +434,20 @@ const ResultsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // state에서 검색 데이터 가져오기
-  const searchData = location.state || {};
+  // state에서 검색 데이터 가져오기 (없으면 세션 스토리지 확인)
+  const [searchData, setSearchData] = useState(() => {
+    const state = location.state;
+    const stored = sessionStorage.getItem('lastSearchData');
+    return state || (stored ? JSON.parse(stored) : {});
+  });
+
+  useEffect(() => {
+    if (location.state) {
+      setSearchData(location.state);
+      sessionStorage.setItem('lastSearchData', JSON.stringify(location.state));
+    }
+  }, [location.state]);
+
   const {
     clinicCode,
     clinicName,
@@ -380,7 +466,7 @@ const ResultsPage = () => {
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50 backdrop-blur-sm bg-white/90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={() => navigate('/')}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               aria-label="뒤로가기"
@@ -394,13 +480,13 @@ const ResultsPage = () => {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <ResultsContent 
-          clinicCode={clinicCode} 
+        <ResultsContent
+          clinicCode={clinicCode}
           clinicName={clinicName}
-          hospitalName={hospitalName} 
+          hospitalName={hospitalName}
           locationName={locationName}
-          sidoCode={sidoCode} 
-          sigguCode={sigguCode} 
+          sidoCode={sidoCode}
+          sigguCode={sigguCode}
         />
       </div>
     </main>
