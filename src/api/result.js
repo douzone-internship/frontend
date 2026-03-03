@@ -14,24 +14,10 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL ?? '';
  */
 export const getSearchResults = async (requestBody) => {
   try {
-    const response = await axios.post(`${API_BASE_URL}/result/reports`, requestBody);
+    const response = await axios.post(`${API_BASE_URL}/api/result/reports`, requestBody);
     return response.data;
   } catch (error) {
     console.error('검색 결과 조회 실패:', error);
-    throw error;
-  }
-};
-
-/**
- * 검색 결과 조회 API (GET - 세션 기반)
- * @returns {Promise<{resultCount: number, aiComment: string, list: Array}>} 검색 결과
- */
-export const getSearchResultsFromSession = async () => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/result/reports`);
-    return response.data;
-  } catch (error) {
-    console.error('세션 기반 검색 결과 조회 실패:', error);
     throw error;
   }
 };

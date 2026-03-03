@@ -9,6 +9,7 @@ import OAuthCallback from './auth/OAuthCallback.jsx';
 import reportWebVitals from './reportWebVitals';
 
 import FavoritesPage from './pages/FavoritesPage.jsx';
+import MyPage from './pages/MyPage.jsx';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -20,6 +21,7 @@ root.render(
         <Route path="/login" element={<LoginPage />} />
         <Route path="/oauth/callback" element={<OAuthCallback />} />
         <Route path="/favorites" element={<FavoritesPage />} />
+        <Route path="/mypage" element={<MyPage />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

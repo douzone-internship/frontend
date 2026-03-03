@@ -21,6 +21,9 @@ const Header = ({ user, loading }) => {
               <Link to="/favorites" className="text-gray-500 hover:text-primary transition-colors text-sm font-medium mr-2">
                 ♥ 찜한 병원
               </Link>
+              <Link to="/mypage" className="text-gray-500 hover:text-primary transition-colors text-sm font-medium mr-2">
+                내 정보
+              </Link>
               <span className="text-gray-700 font-medium">{user.name}님 환영합니다!</span>
               <button
                 onClick={async () => {

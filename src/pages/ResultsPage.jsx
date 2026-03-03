@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { FaMapMarkerAlt, FaStethoscope, FaHospital, FaArrowLeft, FaChevronLeft, FaChevronRight, FaRobot, FaHeart, FaRegHeart } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaStethoscope, FaHospital, FaArrowLeft, FaChevronLeft, FaChevronRight, FaRobot, FaHeart, FaRegHeart, FaComment, FaPaperPlane, FaEdit, FaTrashAlt, FaTimes, FaCheck } from 'react-icons/fa';
 import Skeleton from '../components/common/Skeleton';
 import Logo from '../components/common/Logo';
-import { getSearchResults, getSearchResultsFromSession } from '../api/result';
+import { getSearchResults } from '../api/result';
 import { addFavorite, removeFavoriteByDetails, checkFavorite } from '../api/favorite';
+import { addComment, getComments, updateComment, deleteComment } from '../api/comment';
 
 /**
  * SearchInfo Component
@@ -54,13 +55,228 @@ const AIComment = ({ comment }) => (
 );
 
 /**
+ * StarRating Component
+ * 별점 선택/표시
+ */
+const StarRating = ({ value, onChange, readonly = false }) => {
+  const [hover, setHover] = useState(0);
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          disabled={readonly}
+          onClick={() => onChange?.(star)}
+          onMouseEnter={() => !readonly && setHover(star)}
+          onMouseLeave={() => !readonly && setHover(0)}
+          className={`text-lg transition-colors ${readonly ? 'cursor-default' : 'cursor-pointer'}`}
+        >
+          <span className={(hover || value) >= star ? 'text-yellow-400' : 'text-gray-300'}>★</span>
+        </button>
+      ))}
+    </div>
+  );
+};
+
+/**
+ * CommentSection Component
+ * 병원별 댓글 섹션
+ */
+const CommentSection = ({ hospitalName, clinicCode }) => {
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState('');
+  const [newScore, setNewScore] = useState(5);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editComment, setEditComment] = useState('');
+  const [editScore, setEditScore] = useState(5);
+  const isLoggedIn = !!localStorage.getItem('token');
+
+  const fetchComments = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await getComments(hospitalName, clinicCode);
+      setComments(data);
+    } catch (err) {
+      console.error('댓글 불러오기 실패:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [hospitalName, clinicCode]);
+
+  useEffect(() => {
+    fetchComments();
+  }, [fetchComments]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+    try {
+      setSubmitting(true);
+      const created = await addComment({ hospitalName, clinicCode, comment: newComment.trim(), score: newScore });
+      setComments(prev => [created, ...prev]);
+      setNewComment('');
+      setNewScore(5);
+    } catch (err) {
+      alert('댓글 작성에 실패했습니다.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleUpdate = async (id) => {
+    if (!editComment.trim()) return;
+    try {
+      const updated = await updateComment(id, editComment.trim(), editScore);
+      setComments(prev => prev.map(c => c.id === id ? updated : c));
+      setEditingId(null);
+      setEditComment('');
+      setEditScore(5);
+    } catch (err) {
+      alert('댓글 수정에 실패했습니다.');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('댓글을 삭제하시겠습니까?')) return;
+    try {
+      await deleteComment(id);
+      setComments(prev => prev.filter(c => c.id !== id));
+    } catch (err) {
+      alert('댓글 삭제에 실패했습니다.');
+    }
+  };
+
+  const startEdit = (c) => {
+    setEditingId(c.id);
+    setEditComment(c.comment);
+    setEditScore(c.score);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditComment('');
+    setEditScore(5);
+  };
+
+  const formatDate = (dateStr) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
+
+  return (
+    <div className="mt-4 border-t border-gray-100 pt-4">
+      {/* 댓글 입력 */}
+      {isLoggedIn ? (
+        <form onSubmit={handleSubmit} className="mb-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600 font-medium">평점</span>
+            <StarRating value={newScore} onChange={setNewScore} />
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="댓글을 입력하세요..."
+              className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+              maxLength={500}
+            />
+            <button
+              type="submit"
+              disabled={submitting || !newComment.trim()}
+              className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1"
+            >
+              <FaPaperPlane className="text-xs" />
+              작성
+            </button>
+          </div>
+        </form>
+      ) : (
+        <p className="text-sm text-gray-400 mb-4 text-center py-2 bg-gray-50 rounded-lg">
+          로그인 후 댓글을 작성할 수 있습니다.
+        </p>
+      )}
+
+      {/* 댓글 목록 */}
+      {loading ? (
+        <p className="text-sm text-gray-400 text-center py-2">댓글 로딩 중...</p>
+      ) : comments.length === 0 ? (
+        <p className="text-sm text-gray-400 text-center py-2">아직 댓글이 없습니다.</p>
+      ) : (
+        <div className="space-y-3 max-h-64 overflow-y-auto">
+          {comments.map((c) => (
+            <div key={c.id} className="flex items-start gap-3 group">
+              {/* 아바타 */}
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-xs font-bold text-primary">{c.userName ? c.userName.charAt(0) : '익'}</span>
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="text-sm font-semibold text-gray-800">{c.userName || '익명'}</span>
+                  <StarRating value={c.score} readonly />
+                  <span className="text-xs text-gray-400">{formatDate(c.createdAt)}</span>
+                  {c.updatedAt && c.updatedAt !== c.createdAt && (
+                    <span className="text-xs text-gray-300">(수정됨)</span>
+                  )}
+                </div>
+
+                {editingId === c.id ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500">평점</span>
+                      <StarRating value={editScore} onChange={setEditScore} />
+                    </div>
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        value={editComment}
+                        onChange={(e) => setEditComment(e.target.value)}
+                        className="flex-1 px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+                        autoFocus
+                      />
+                      <button onClick={() => handleUpdate(c.id)} className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors">
+                        <FaCheck className="text-sm" />
+                      </button>
+                      <button onClick={cancelEdit} className="p-1.5 text-gray-400 hover:bg-gray-100 rounded-lg transition-colors">
+                        <FaTimes className="text-sm" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-600 break-words">{c.comment}</p>
+                )}
+              </div>
+
+              {/* 수정/삭제 버튼 — userName이 있으면 본인 댓글 */}
+              {c.userName && editingId !== c.id && (
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => startEdit(c)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
+                    <FaEdit className="text-xs" />
+                  </button>
+                  <button onClick={() => handleDelete(c.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
+                    <FaTrashAlt className="text-xs" />
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/**
  * ResultCard Component
  * 개별 검색 결과 카드
  */
-
-
 const ResultCard = ({ result, defaultClinicCode }) => {
   const [isFavorite, setIsFavorite] = useState(false);
+  const [showComments, setShowComments] = useState(false);
   const targetClinicCode = result.clinicCode || defaultClinicCode;
 
   // 초기 찜 상태 확인
@@ -126,7 +342,7 @@ const ResultCard = ({ result, defaultClinicCode }) => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow relative group">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow relative">
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
@@ -153,6 +369,20 @@ const ResultCard = ({ result, defaultClinicCode }) => {
           <div className="text-2xl font-bold text-primary">{priceRange}</div>
         </div>
       </div>
+
+      {/* 댓글 토글 버튼 */}
+      <button
+        onClick={() => setShowComments(!showComments)}
+        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-primary transition-colors mt-2"
+      >
+        <FaComment className="text-xs" />
+        {showComments ? '댓글 접기' : '💬 댓글 보기'}
+      </button>
+
+      {/* 댓글 섹션 */}
+      {showComments && (
+        <CommentSection hospitalName={result.hospitalName} clinicCode={targetClinicCode} />
+      )}
     </div>
   );
 };
@@ -285,20 +515,17 @@ const ResultsContent = ({ clinicCode, clinicName, hospitalName, locationName, si
     const fetchResults = async () => {
       try {
         setLoading(true);
-        let data;
-
-        // clinicCode가 있으면 POST 요청, 없으면 세션 기반 GET 요청
-        if (clinicCode) {
-          data = await getSearchResults({
-            clinicCode,
-            hospitalName: hospitalName || null,
-            sidoCode: sidoCode || null,
-            sigguCode: sigguCode || null
-          });
-        } else {
-          // 새로고침 시 세션에서 가져오기
-          data = await getSearchResultsFromSession();
+        if (!clinicCode) {
+          navigate('/');
+          return;
         }
+
+        const data = await getSearchResults({
+          clinicCode,
+          hospitalName: hospitalName || null,
+          sidoCode: sidoCode || null,
+          sigguCode: sigguCode || null
+        });
 
         setResults(data.list || []);
         setAiComment(data.aiComment || '');
