@@ -13,11 +13,11 @@ const LoginPage = () => {
     }, [location]);
 
     const handleGoogleLogin = () => {
-        window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+        window.location.href = `/api/oauth2/authorization/google`;
     };
 
     const handleKakaoLogin = () => {
-        window.location.href = 'http://localhost:8080/oauth2/authorization/kakao';
+        window.location.href = `/api/oauth2/authorization/kakao`;
     };
 
     return (
