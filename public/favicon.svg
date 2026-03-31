@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Eolmadak stethoscope icon">
+  <g fill="none" stroke="#3B82F6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 10v14c0 6.6 5.4 12 12 12s12-5.4 12-12V10"/>
+    <path d="M16 10h8"/>
+    <path d="M40 10h8"/>
+    <path d="M32 36v8c0 5.5 4.5 10 10 10h2"/>
+    <circle cx="49" cy="54" r="5"/>
+  </g>
+</svg>
