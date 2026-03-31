@@ -5,6 +5,17 @@ import { useLocation } from 'react-router-dom';
 
 const LoginPage = () => {
     const location = useLocation();
+    const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+    const envApiBaseUrl = (process.env.REACT_APP_API_BASE_URL || '').trim();
+
+    const rawApiBaseUrl = envApiBaseUrl
+        ? (isLocalhost && envApiBaseUrl === '/api' ? 'http://localhost:8080/api' : envApiBaseUrl)
+        : (isLocalhost ? 'http://localhost:8080/api' : '/api');
+
+    const normalizedApiBaseUrl = rawApiBaseUrl.replace(/\/$/, '');
+    const apiBaseUrl = normalizedApiBaseUrl.endsWith('/api')
+        ? normalizedApiBaseUrl
+        : `${normalizedApiBaseUrl}/api`;
 
     useEffect(() => {
         // 로그인 페이지로 올 때 이전 페이지 경로를 세션 스토리지에 저장
@@ -13,11 +24,11 @@ const LoginPage = () => {
     }, [location]);
 
     const handleGoogleLogin = () => {
-        window.location.href = `/api/oauth2/authorization/google`;
+        window.location.href = `${apiBaseUrl}/oauth2/authorization/google`;
     };
 
     const handleKakaoLogin = () => {
-        window.location.href = `/api/oauth2/authorization/kakao`;
+        window.location.href = `${apiBaseUrl}/oauth2/authorization/kakao`;
     };
 
     return (
