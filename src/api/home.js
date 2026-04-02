@@ -1,7 +1,5 @@
 import axios from 'axios';
-
-// API Base URL 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL ?? '';
+import { buildApiUrl } from '../utils/apiUrl';
 
 /**
  * 진료명 검색 API
@@ -10,7 +8,7 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL ?? '';
  */
 export const searchTreatments = async (name) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/home/clinics`, {
+    const response = await axios.get(buildApiUrl('/home/clinics'), {
       params: {
         name: name
       }
@@ -30,7 +28,7 @@ export const searchTreatments = async (name) => {
  */
 export const searchHospitals = async (name, locationCode) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/home/hospitals`, {
+    const response = await axios.get(buildApiUrl('/home/hospitals'), {
       params: {
         location: locationCode,
         name: name
@@ -50,7 +48,7 @@ export const searchHospitals = async (name, locationCode) => {
  */
 export const searchLocations = async (name) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/home/locations`, {
+    const response = await axios.get(buildApiUrl('/home/locations'), {
       params: {
         name: name
       }

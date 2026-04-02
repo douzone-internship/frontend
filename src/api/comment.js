@@ -1,6 +1,5 @@
 import axios from 'axios';
-
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '/api';
+import { buildApiUrl } from '../utils/apiUrl';
 
 /**
  * 인증 헤더 생성 (토큰이 있을 때만)
@@ -16,7 +15,7 @@ const authHeader = () => {
  */
 export const addComment = async (data) => {
     try {
-        const response = await axios.post(`${API_BASE_URL}/comments`, data, {
+        const response = await axios.post(buildApiUrl('/comments'), data, {
             headers: authHeader()
         });
         return response.data;
@@ -33,7 +32,7 @@ export const addComment = async (data) => {
  */
 export const getComments = async (hospitalName, clinicCode) => {
     try {
-        const response = await axios.get(`${API_BASE_URL}/comments`, {
+        const response = await axios.get(buildApiUrl('/comments'), {
             params: { hospitalName, clinicCode },
             headers: authHeader()
         });
@@ -52,7 +51,7 @@ export const getComments = async (hospitalName, clinicCode) => {
  */
 export const updateComment = async (id, comment, score) => {
     try {
-        const response = await axios.put(`${API_BASE_URL}/comments/${id}`, { comment, score }, {
+        const response = await axios.put(buildApiUrl(`/comments/${id}`), { comment, score }, {
             headers: authHeader()
         });
         return response.data;
@@ -68,7 +67,7 @@ export const updateComment = async (id, comment, score) => {
  */
 export const deleteComment = async (id) => {
     try {
-        await axios.delete(`${API_BASE_URL}/comments/${id}`, {
+        await axios.delete(buildApiUrl(`/comments/${id}`), {
             headers: authHeader()
         });
     } catch (error) {
@@ -82,7 +81,7 @@ export const deleteComment = async (id) => {
  */
 export const getMyComments = async () => {
     try {
-        const response = await axios.get(`${API_BASE_URL}/comments/my`, {
+        const response = await axios.get(buildApiUrl('/comments/my'), {
             headers: authHeader()
         });
         return response.data;

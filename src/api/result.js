@@ -1,7 +1,5 @@
 import axios from 'axios';
-
-// API Base URL 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL ?? '';
+import { buildApiUrl } from '../utils/apiUrl';
 
 /**
  * 검색 결과 조회 API
@@ -14,7 +12,7 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL ?? '';
  */
 export const getSearchResults = async (requestBody) => {
   try {
-    const response = await axios.post(`${API_BASE_URL}/api/result/reports`, requestBody);
+    const response = await axios.post(buildApiUrl('/result/reports'), requestBody);
     return response.data;
   } catch (error) {
     console.error('검색 결과 조회 실패:', error);

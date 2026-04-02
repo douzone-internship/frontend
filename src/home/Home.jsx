@@ -2,6 +2,7 @@
 import Header from '../components/common/Header';
 import SearchForm from '../components/home/SearchForm';
 import Features from '../components/home/Features';
+import { buildApiUrl } from '../utils/apiUrl';
 
 const HomePage = () => {
   const [user, setUser] = useState(null);
@@ -10,7 +11,7 @@ const HomePage = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch('/api/auth/me', {
+        const response = await fetch(buildApiUrl('/auth/me'), {
           credentials: 'include',
           cache: 'no-store' // 캐시 방지
         });

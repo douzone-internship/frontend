@@ -5,6 +5,7 @@ import { FcGoogle } from 'react-icons/fc';
 import { RiKakaoTalkFill } from 'react-icons/ri';
 import Logo from '../components/common/Logo';
 import { getMyComments, updateComment, deleteComment } from '../api/comment';
+import { buildApiUrl } from '../utils/apiUrl';
 
 // 소셜 로그인 뱃지 컴포넌트
 const ProviderBadge = ({ provider }) => {
@@ -85,7 +86,7 @@ const MyPage = () => {
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                const response = await fetch('/api/auth/me', {
+                const response = await fetch(buildApiUrl('/auth/me'), {
                     credentials: 'include',
                     cache: 'no-store'
                 });
@@ -154,7 +155,7 @@ const MyPage = () => {
         setDeleteLoading(true);
         try {
             // TODO: 백엔드 회원탈퇴 API 연동 (DELETE /api/auth/me)
-            const response = await fetch('/api/auth/me', {
+            const response = await fetch(buildApiUrl('/auth/me'), {
                 method: 'DELETE',
                 credentials: 'include',
                 headers: {

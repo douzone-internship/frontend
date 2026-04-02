@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Logo from './Logo';
+import { buildApiUrl } from '../../utils/apiUrl';
 /**
  * Header Component
  * 인증 상태에 따라 다른 버튼을 보여주는 헤더
@@ -51,7 +52,7 @@ const Header = ({ user, loading }) => {
 
                   try {
                     // 3. 백엔드 로그아웃 호출
-                    await fetch('/api/auth/logout', {
+                    await fetch(buildApiUrl('/auth/logout'), {
                       method: 'POST',
                       credentials: 'include',
                       headers: {

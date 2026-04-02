@@ -1,7 +1,5 @@
 import axios from 'axios';
-
-// API Base URL (Relative path to use proxy)
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '/api';
+import { buildApiUrl } from '../utils/apiUrl';
 
 /**
  * 찜하기 추가
@@ -9,7 +7,7 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '/api';
  */
 export const addFavorite = async (data) => {
     try {
-        const response = await axios.post(`${API_BASE_URL}/favorites`, data, {
+        const response = await axios.post(buildApiUrl('/favorites'), data, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}` // 토큰 헤더 추가
             }
@@ -27,7 +25,7 @@ export const addFavorite = async (data) => {
  */
 export const removeFavoriteById = async (id) => {
     try {
-        await axios.delete(`${API_BASE_URL}/favorites/${id}`, {
+        await axios.delete(buildApiUrl(`/favorites/${id}`), {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -45,7 +43,7 @@ export const removeFavoriteById = async (id) => {
  */
 export const removeFavoriteByDetails = async (hospitalName, clinicCode) => {
     try {
-        await axios.delete(`${API_BASE_URL}/favorites`, {
+        await axios.delete(buildApiUrl('/favorites'), {
             params: { hospitalName, clinicCode },
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -62,7 +60,7 @@ export const removeFavoriteByDetails = async (hospitalName, clinicCode) => {
  */
 export const getFavorites = async () => {
     try {
-        const response = await axios.get(`${API_BASE_URL}/favorites`, {
+        const response = await axios.get(buildApiUrl('/favorites'), {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
@@ -79,7 +77,7 @@ export const getFavorites = async () => {
  */
 export const checkFavorite = async (hospitalName, clinicCode) => {
     try {
-        const response = await axios.get(`${API_BASE_URL}/favorites/check`, {
+        const response = await axios.get(buildApiUrl('/favorites/check'), {
             params: { hospitalName, clinicCode },
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
